@@ -1,76 +1,88 @@
 import frappe
+from commera.sdk import STORE_ORDER_TYPE, orders
 from frappe import _
-from frappe.query_builder import DocType
 
 from commera_print_on_demand import provider
 
 CANCELLABLE_STATUSES = ("Queued", "Submitted")
+RESENDABLE_STATUSES = ("Queued", "Submitted")
 
 
 def on_order_placed(event):
-	if frappe.db.get_value("Sales Order", event.sales_order, "docstatus") == 2:
-		return
+	send_print_jobs(event.sales_order, ("Queued",), event_id=event.id)
+
+
+def send_print_jobs(sales_order: str, statuses: tuple[str, ...], event_id: str | None = None) -> int:
+	"""Sends each print line with no job yet, or whose job is in `statuses`. The provider is idempotent per
+	line, so sending a job it already holds returns the same provider order."""
+	order = orders.get_order(sales_order)
+	if order["is_cancelled"]:
+		return 0
 
 	jobs_by_line = {
 		job.sales_order_item: job
 		for job in frappe.get_all(
 			"POD Job",
-			filters={"sales_order": event.sales_order},
+			filters={"sales_order": sales_order},
 			fields=["name", "sales_order_item", "status"],
 		)
 	}
-	for line in get_print_lines(event.sales_order):
-		job = jobs_by_line.get(line.name)
-		if job and job.status != "Queued":
+	sent = 0
+	for line in get_print_lines(order):
+		job = jobs_by_line.get(line["line_id"])
+		if job and job.status not in statuses:
 			continue
-		job_name = job.name if job else add_job(event, line)
-		provider_order_id = provider.create_order(line.name, line.product_id, line.qty)
+		job_name = job.name if job else add_job(sales_order, line, event_id)
+		provider_order_id = provider.create_order(line["line_id"], line["product_id"], line["qty"])
 		frappe.db.set_value(
 			"POD Job", job_name, {"status": "Submitted", "provider_order_id": provider_order_id}
 		)
 		# Each line's job is saved once the provider holds it, so a failure on a later line never orphans it.
 		frappe.db.commit()
+		sent += 1
+	return sent
 
 
-def get_print_lines(sales_order: str) -> list:
-	sales_order_item = DocType("Sales Order Item")
-	item = DocType("Item")
-	return (
-		frappe.qb.from_(sales_order_item)
-		.join(item)
-		.on(item.name == sales_order_item.item_code)
-		.select(
-			sales_order_item.name,
-			sales_order_item.item_code,
-			sales_order_item.qty,
-			item.commera_print_on_demand_product_id.as_("product_id"),
+def get_print_lines(order) -> list[dict]:
+	product_ids = dict(
+		frappe.get_all(
+			"Item",
+			filters={
+				"name": ["in", list({line["item_code"] for line in order["items"]})],
+				"commera_print_on_demand_enabled": 1,
+			},
+			fields=["name", "commera_print_on_demand_product_id"],
+			as_list=True,
 		)
-		.where((sales_order_item.parent == sales_order) & (item.commera_print_on_demand_enabled == 1))
-		.orderby(sales_order_item.idx)
-		.run(as_dict=True)
 	)
+	return [
+		{**line, "product_id": product_ids[line["item_code"]]}
+		for line in order["items"]
+		if line["item_code"] in product_ids
+	]
 
 
-def add_job(event, line) -> str:
+def add_job(sales_order: str, line: dict, event_id: str | None) -> str:
 	job = frappe.new_doc("POD Job")
 	job.update(
 		{
-			"sales_order": event.sales_order,
-			"sales_order_item": line.name,
-			"item_code": line.item_code,
-			"product_id": line.product_id,
-			"qty": line.qty,
-			"event_id": event.id,
+			"sales_order": sales_order,
+			"sales_order_item": line["line_id"],
+			"item_code": line["item_code"],
+			"product_id": line["product_id"],
+			"qty": line["qty"],
+			"event_id": event_id,
 		}
 	)
 	job.insert()
 	return job.name
 
 
-def before_order_cancel(sales_order):
+def before_order_cancel(sales_order, method=None):
+	if sales_order.order_type != STORE_ORDER_TYPE:
+		return
 	if frappe.db.exists("POD Job", {"sales_order": sales_order.name, "status": "In Production"}):
-		return _("Your print is already in production, so this order can't be cancelled.")
-	return None
+		frappe.throw(_("Your print is already in production, so this order can't be cancelled."))
 
 
 def on_order_cancelled(event):

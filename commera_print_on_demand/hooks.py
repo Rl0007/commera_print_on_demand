@@ -1,5 +1,5 @@
 app_name = "commera_print_on_demand"
-app_title = "Commera Print On Demand"
+app_title = "Print on Demand"
 app_publisher = "BWH Tech"
 app_description = "Print-on-demand connector for Commera (example app)"
 app_email = "dev@bwh.tech"
@@ -13,7 +13,8 @@ after_migrate = "commera_print_on_demand.install.add_custom_fields"
 commera_api_version = [1]
 
 commera_order_placed = ["commera_print_on_demand.orders.on_order_placed"]
-commera_before_order_cancel = ["commera_print_on_demand.orders.before_order_cancel"]
 commera_order_cancelled = ["commera_print_on_demand.orders.on_order_cancelled"]
 commera_order_fulfilled = ["commera_print_on_demand.orders.on_order_fulfilled"]
 commera_order_delivered = ["commera_print_on_demand.orders.on_order_delivered"]
+
+doc_events = {"Sales Order": {"before_cancel": "commera_print_on_demand.orders.before_order_cancel"}}
