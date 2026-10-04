@@ -9,7 +9,7 @@ RESENDABLE_STATUSES = ("Queued", "Submitted")
 
 
 def on_order_placed(event):
-	send_print_jobs(event.sales_order, ("Queued",), event_id=event.id)
+	send_print_jobs(event.reference_name, ("Queued",), event_id=event.id)
 
 
 def send_print_jobs(sales_order: str, statuses: tuple[str, ...], event_id: str | None = None) -> int:
@@ -88,7 +88,7 @@ def before_order_cancel(sales_order, method=None):
 def on_order_cancelled(event):
 	jobs = frappe.get_all(
 		"POD Job",
-		filters={"sales_order": event.sales_order, "status": ["in", CANCELLABLE_STATUSES]},
+		filters={"sales_order": event.reference_name, "status": ["in", CANCELLABLE_STATUSES]},
 		fields=["name", "provider_order_id"],
 	)
 	for job in jobs:
@@ -98,11 +98,11 @@ def on_order_cancelled(event):
 
 
 def on_order_fulfilled(event):
-	set_job_status(event.sales_order, "Shipped", ("Submitted", "In Production"))
+	set_job_status(event.reference_name, "Shipped", ("Submitted", "In Production"))
 
 
 def on_order_delivered(event):
-	set_job_status(event.sales_order, "Delivered", ("Submitted", "In Production", "Shipped"))
+	set_job_status(event.reference_name, "Delivered", ("Submitted", "In Production", "Shipped"))
 
 
 def set_job_status(sales_order: str, status: str, from_statuses: tuple[str, ...]):
