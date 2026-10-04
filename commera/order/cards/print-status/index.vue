@@ -1,5 +1,5 @@
 <script>
-export const extension = {
+export const plugin = {
   label: 'Print status',
   requires: 'POD Job',
   condition: 'commera_print_on_demand.conditions.has_print_jobs',
@@ -9,10 +9,10 @@ export const extension = {
 <script setup>
 import { computed, watch } from 'vue'
 import { Skeleton } from 'frappe-ui'
-import { StatusBadge, useCard, useExtension, useMethodRead } from '@commera/admin'
+import { StatusBadge, useCard, usePlugin, useMethodRead } from '@commera/admin'
 import { statusKey } from '../../../shared/status'
 
-const { record } = useExtension()
+const { record } = usePlugin()
 const card = useCard()
 
 const jobsRequest = useMethodRead('commera_print_on_demand.api.get_order_print_jobs', {

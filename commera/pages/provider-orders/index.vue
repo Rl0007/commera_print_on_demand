@@ -1,5 +1,5 @@
 <script>
-export const extension = { label: 'Provider orders', icon: 'package', requires: 'POD Provider Order', order: 2 }
+export const plugin = { label: 'Provider orders', icon: 'package', requires: 'POD Provider Order', order: 2 }
 </script>
 
 <script setup>
@@ -12,7 +12,7 @@ import {
   ListSkeleton,
   StatusBadge,
   shortDate,
-  useExtension,
+  usePlugin,
   useMethodRead,
   usePage,
 } from '@commera/admin'
@@ -21,7 +21,7 @@ import { statusKey } from '../../shared/status'
 const ALL_ORDERS = 'all'
 const ROW_HEIGHT = 60
 
-const { navigate } = useExtension()
+const { navigate } = usePlugin()
 usePage().setActions([{ label: 'Print jobs', icon: 'printer', onClick: () => navigate('jobs') }])
 
 const status = ref(ALL_ORDERS)

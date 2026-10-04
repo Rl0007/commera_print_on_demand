@@ -8,7 +8,7 @@ import {
   ListSkeleton,
   StatusBadge,
   shortDate,
-  useExtension,
+  usePlugin,
   useMethodRead,
   usePage,
 } from '@commera/admin'
@@ -17,7 +17,7 @@ import { statusKey } from '../../shared/status'
 const ALL_JOBS = 'all'
 const ROW_HEIGHT = 60
 
-const { navigate } = useExtension()
+const { navigate } = usePlugin()
 const pageHeader = usePage()
 pageHeader.setTitle('Print jobs')
 pageHeader.setBreadcrumbs([])

@@ -232,7 +232,7 @@ def new_cod_order() -> str:
 
 
 def trigger_due_deliveries():
-	from commera.app_events import run_due_deliveries
+	from commera.plugin_events import run_due_deliveries
 
 	run_due_deliveries()
 	# run_due_deliveries enqueues after commit.

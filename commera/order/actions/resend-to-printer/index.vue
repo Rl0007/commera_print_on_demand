@@ -1,5 +1,5 @@
 <script>
-export const extension = {
+export const plugin = {
   label: 'Resend to printer',
   icon: 'printer',
   requires: 'POD Job',

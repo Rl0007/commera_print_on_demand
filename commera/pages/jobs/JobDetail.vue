@@ -1,14 +1,14 @@
 <script setup>
 import { computed } from 'vue'
 import { Skeleton } from 'frappe-ui'
-import { EmptyState, StatusBadge, shortDate, useExtension, useMethodRead, usePage } from '@commera/admin'
+import { EmptyState, StatusBadge, shortDate, usePlugin, useMethodRead, usePage } from '@commera/admin'
 import { statusKey } from '../../shared/status'
 
 const props = defineProps({
   name: { type: String, required: true },
 })
 
-const { navigate } = useExtension()
+const { navigate } = usePlugin()
 
 const jobRequest = useMethodRead('commera_print_on_demand.api.get_job', {
   params: { name: props.name },

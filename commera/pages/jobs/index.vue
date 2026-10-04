@@ -1,13 +1,13 @@
 <script>
-export const extension = { label: 'Print jobs', icon: 'printer', requires: 'POD Job', order: 1 }
+export const plugin = { label: 'Print jobs', icon: 'printer', requires: 'POD Job', order: 1 }
 </script>
 
 <script setup>
-import { useExtension } from '@commera/admin'
+import { usePlugin } from '@commera/admin'
 import JobDetail from './JobDetail.vue'
 import JobList from './JobList.vue'
 
-const { path } = useExtension()
+const { path } = usePlugin()
 </script>
 
 <template>
